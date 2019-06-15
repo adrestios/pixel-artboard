@@ -21,9 +21,10 @@
 <body>
   <div id="app">
     <div class="canvas">
-      <canvas @click='drawDot' ref='canvas' :width='width' :height='height'></canvas>
+      <canvas @click='handleCanvasClick' ref='canvas' :width='width' :height='height'></canvas>
     </div>
-    <input type="color" v-model='color'>
+    <button @click='pickingColor = !pickingColor'>{{pickingColor ? '正在取色' : '取色'}}</button>
+    <input type="color" v-model='color' value='red'>
     <label :style="{color: c}" v-for='c of commonColors'>
       <input type="radio" v-model='color' :value='c'>{{c}}
     </label>
@@ -36,19 +37,36 @@
     data() {
       return {
         pixelData: [],
-        commonColors: ['red','green','orange','yellow','aqua','blue','black','white','purp'],
+        commonColors: ['#ff0000','#00ff00','#0000ff','#ffffff','#000000'],
         color: 'red',
         width: 0,
         height: 0,
+        pickingColor: false,
       }
     },
     methods: {
-      drawDot(e) {
-
+      handleCanvasClick(e) {
         let box = this.$refs.canvas.getBoundingClientRect()
         let x = Math.floor((e.clientX - box.left) * this.$refs.canvas.width / box.width)
         let y = Math.floor((e.clientY - box.top) * this.$refs.canvas.height / box.height)
-console.log(x,y);
+        if (this.pickingColor) {
+          this.pickColor(e, x, y)
+        } else {
+          this.drawDot(e, x, y)
+        }
+      },
+      rgba2hex(dot) {
+        dot = Array.from(dot)
+        var dot = dot.map(it => it.toString(16).padStart(2, '0'))
+        return '#'+dot[0]+dot[1]+dot[2]
+      },
+      pickColor(e, x, y) {
+        let p = this.ctx.getImageData(x, y, 1, 1).data
+        let hexColor = this.rgba2hex(p)
+        this.pickingColor = false
+        this.color = hexColor
+      }, 
+      drawDot(e, x, y) {
         this.ws.send(JSON.stringify({
           type: 'drawDot',
           x: x,
@@ -63,7 +81,7 @@ console.log(x,y);
 
       let canvas = this.$refs.canvas
       let ctx = canvas.getContext('2d')
-
+      this.ctx = ctx
       //ctx.webkitImageSmoothingEnabled = false;
       //ctx.mozImageSmoothingEnabled = false;
       //ctx.imageSmoothingEnabled = false;

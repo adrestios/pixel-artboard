@@ -38,7 +38,7 @@ wss.on('connection', (ws, req) => {
     let now = Date.now()
 
     if (msg.type === 'drawDot') {
-      if (now - lastDraw < 1000) {
+      if (now - lastDraw < 10) {
         return
       }
       if (msg.x >= 0 && msg.x < width && msg.y >= 0 && msg.y < height) {
