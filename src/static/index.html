@@ -21,10 +21,9 @@
 <body>
   <div id="app">
     <div class="canvas">
-      <div class="row" v-for='(row,y) in pixelData'>
-        <span @click='drawDot(x,y,color)' class="dot" v-for='(dotColor, x) in row' :style='{background: dotColor}'></span>
-      </div>
+      <canvas @click='drawDot' ref='canvas' :width='width' :height='height'></canvas>
     </div>
+    <input type="color" v-model='color'>
     <label :style="{color: c}" v-for='c of commonColors'>
       <input type="radio" v-model='color' :value='c'>{{c}}
     </label>
@@ -38,14 +37,23 @@
       return {
         pixelData: [],
         commonColors: ['red','green','orange','yellow','aqua','blue','black','white','purp'],
-        color: 'red'
+        color: 'red',
+        width: 0,
+        height: 0,
       }
     },
     methods: {
-      drawDot(x, y , color) {
+      drawDot(e) {
+
+        let box = this.$refs.canvas.getBoundingClientRect()
+        let x = Math.floor((e.clientX - box.left) * this.$refs.canvas.width / box.width)
+        let y = Math.floor((e.clientY - box.top) * this.$refs.canvas.height / box.height)
+console.log(x,y);
         this.ws.send(JSON.stringify({
           type: 'drawDot',
-          x,y,color
+          x: x,
+          y: y,
+          color: this.color,
         }))
       }
     },
@@ -53,13 +61,33 @@
       var ws = new WebSocket('ws://localhost:9095/pixel')
       this.ws = ws
 
+      let canvas = this.$refs.canvas
+      let ctx = canvas.getContext('2d')
+
+      //ctx.webkitImageSmoothingEnabled = false;
+      //ctx.mozImageSmoothingEnabled = false;
+      //ctx.imageSmoothingEnabled = false;
+
       ws.onmessage = ({data}) => {
         data = JSON.parse(data)
 
         if (data.type === 'init') {
-          this.pixelData = data.pixelData
+          //this.pixelData = data.pixelData
+          this.width = data.pixelData[0].length
+          this.height = data.pixelData.length
+
+          Vue.nextTick(() => {
+            data.pixelData.forEach((row, y) => {
+              row.forEach((color,x) => {
+                ctx.fillStyle = color
+                ctx.fillRect(x,y,1,1)
+              })
+            })
+          })
+          
         } else if (data.type === 'updateDot') {
-          Vue.set(this.pixelData[data.y], data.x, data.color)
+          ctx.fillStyle = data.color
+          ctx.fillRect(data.x, data.y, 1, 1)
         }
       }
 
