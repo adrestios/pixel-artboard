@@ -80,6 +80,8 @@
       this.ws = ws
 
       let canvas = this.$refs.canvas
+      canvas.style.imageRendering = 'pixelated'
+
       let ctx = canvas.getContext('2d')
       this.ctx = ctx
       //ctx.webkitImageSmoothingEnabled = false;
