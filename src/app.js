@@ -28,10 +28,14 @@ async function main() {
     img = new Jimp(width,height,0xffffffff)
   }
 
+  let lastUpdate = 0
   setInterval(() => {
-    img.write(path.join(__dirname,'./pixel.png'), () => {
-      console.log('data has saved')
-    })
+    let now = Date.now()
+    if (now - lastUpdate < 3000) {
+      img.write(path.join(__dirname,'./pixel.png'), () => {
+        console.log('data has saved')
+      })
+    }
   }, 3000)
 
   wss.on('connection', (ws, req) => {
