@@ -4,19 +4,81 @@
   <meta charset="UTF-8">
   <title>Document</title>
   <style>
-    .canvas {
-      border: 2px solid;
-      width: max-content;
+    @font-face {
+      font-family: 'iconfont';  /* project id 899507 */
+      src: url('//at.alicdn.com/t/font_899507_8oy7u45bbvw.eot');
+      src: url('//at.alicdn.com/t/font_899507_8oy7u45bbvw.eot?#iefix') format('embedded-opentype'),
+      url('//at.alicdn.com/t/font_899507_8oy7u45bbvw.woff') format('woff'),
+      url('//at.alicdn.com/t/font_899507_8oy7u45bbvw.ttf') format('truetype'),
+      url('//at.alicdn.com/t/font_899507_8oy7u45bbvw.svg#iconfont') format('svg');
     }
-    .row {
-      display: flex;
+    .iconfont{
+      font-family:"iconfont" !important;
+      font-size:24px;font-style:normal;
+      -webkit-font-smoothing: antialiased;
+      -webkit-text-stroke-width: 0.2px;
+      -moz-osx-font-smoothing: grayscale;
     }
-    .dot {
-      width: 10px;
-      height: 10px;
-      border: 2px solid;
+
+    #ing {
+      color: #ffffff;
     }
-    
+
+    .pick-btn {
+      border-radius: 15px;
+    }
+
+    .olCount {
+      float: right;
+    }
+
+    .font {
+      font-size:24px;
+      font-style:normal;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #cdcdcd;
+    }
+
+    .nav {
+      text-align: center;
+      width: 100%;
+      height: 50px;
+      background-color: #333333;
+    }
+    .nav a {
+      color: #b0b0b0;
+      display: inline-block;
+      text-decoration: none;
+      line-height: 50px;
+    }
+
+    .nav a:hover {
+      color: #f3f3f3;
+    }
+
+    #app {
+      width: 512px;
+      margin: 34px auto;
+    }
+
+    .wrapper {
+      margin-bottom: 12px;
+      position: relative;
+      width: 512px;
+      height: 512px;
+      overflow: hidden;
+      border: 2px solid #333333;
+    }
+
+    canvas {
+      position: absolute;
+      vertical-align: bottom;
+      transform-origin: top left;
+    }
 
     .common-colors {
       margin-top: 10px;
@@ -36,19 +98,23 @@
     }
 
     .color-card.active {
-      width: 25px;
-      height: 25px;
-      margin-bottom: 2px;
+      border: 5px solid #000;
+      margin: 1px;
     }
   </style>
 </head>
 <body>
   <div id="app">
-    <div class="canvas">
-      <canvas @click='handleCanvasClick' ref='canvas' :width='width' :height='height'></canvas>
+    <div @mousewheel='handleZoom' class="wrapper" ref='wrapper'>
+      <canvas @mousedown='prepareDrag'  @mousemove="getCoor" ref='canvas' :width='width' :height='height' style='top:0px;left:0px'></canvas>
     </div>
-    <button @click='startPickingColor'>{{pickingColor ? '正在取色' : '取色'}}</button>
-    <input type="color" v-model='color' value='red'>
+    <button @click="startPickingColor" class="pick-btn">
+            <unpicking v-if="pickingColor"></unpicking>
+            <picking v-if="pickingColor"></picking>
+        </button>
+        <input type="color" v-model="color" style="border-radius: 5px;">
+        <span class="font">{{`(${currSite.x},${currSite.y})`}}</span>
+        <span class="olCount"><i class="font">Online&nbsp;{{onlineCount}}</i></span>
     <div class='common-colors'>
       <span v-for='c of commonColors' @click='color=c' :class='{"color-card":true,active:c==color}' :style='{color:c}'></span>
     </div>
@@ -63,12 +129,69 @@
         pixelData: [],
         commonColors: ['#000000','#ffffff','#aaaaaa','#555555','#fed3c7','#ffc4ce','#faac8e','#ff8b83','#f44336','#e91e63','#e2669e','#9c27b0','#673ab7','#3f51b5','#004670','#0571197','#2196f3','#00bcd4','#3be5db','#97fddc','#167300','#37a93c','#89e642','#d7ff07','#fff6d1','#f8cb8c','#ffeb3b','#ffc107','#ff9800','#ff5722','#b83f27','#795548'],
         color: 'red',
-        width: 256,
-        height: 256,
+        width: 512,
+        height: 512,
         pickingColor: false,
+        zoomFactor: 1,
+        onlineCount: 0,
+        currSite: { x: '?', y: '?' }
       }
     },
     methods: {
+      getCoor(e) {
+        let { x, y } = this.getMousePosition(e)
+        this.currSite.x = x
+        this.currSite.y = y
+        let canvas = this.$refs.canvas
+        canvas.addEventListener('mouseout', (e) => {
+            this.currSite.x = '?'
+            this.currSite.y = '?'
+        })
+        },
+      prepareDrag(e) {
+        let canvas = this.$refs.canvas
+        let startX = e.clientX
+        let startY = e.clientY
+        let posX = parseInt(canvas.style.left)
+        let posY = parseInt(canvas.style.top)
+        let moveHandler
+        let upHandler
+
+        let moved = false
+        canvas.addEventListener('mousemove', moveHandler = e => {
+          let currX = e.clientX
+          let currY = e.clientY
+          let diffX = currX - startX
+          let diffY = currY - startY
+          canvas.style.left = posX + diffX + 'px'
+          canvas.style.top = posY + diffY + 'px'
+        })
+        canvas.addEventListener('mouseup',upHandler = e => {
+          let currX = e.clientX
+          let currY = e.clientY
+          let diffX = currX - startX
+          let diffY = currY - startY
+          if (Math.abs(diffX) > 2 || Math.abs(diffY) > 2) {
+            moved = true
+          }
+          canvas.removeEventListener('mousemove', moveHandler)
+          canvas.removeEventListener('mouseup', upHandler)
+          if (!moved) {
+            this.handleCanvasClick(e)
+          }
+        })
+      },
+      getMousePosition(e) {
+        // 坐标有误差，在发送时作出修正
+        let clientX = e.clientX // 相对于视口
+        let clientY = e.clientY
+        // getBoundingclientRect 也相对于视口，与clientX 作差即误差（并除以系数处理）
+        let rect = this.$refs.canvas.getBoundingClientRect()
+        // 正数浮点数与0 或运算 取整
+        let x = (clientX - rect.left) / this.zoomFactor | 0
+        let y = (clientY - rect.top) / this.zoomFactor | 0
+        return { x, y }
+      },
       makeCursorImg (color) {
         let cursor = document.createElement('canvas')
         let ctx = cursor.getContext('2d')
@@ -150,10 +273,30 @@
           y: y,
           color: this.color,
         }))
-      }
+      },
+      handleZoom(e) {
+        canvas = this.$refs.canvas
+        e.preventDefault()
+        if (e.deltaY < 0) {
+          this.zoomFactor = this.zoomFactor * 1.25
+        } else {
+          this.zoomFactor = this.zoomFactor * 0.8
+        }
+        if (this.zoomFactor < 1) {
+          this.zoomFactor = 1
+        }
+        if (this.zoomFactor > 10) {
+          this.zoomFactor = 10
+        }
+        if (this.zoomFactor == 1) {
+          canvas.style.left = '0px'
+          canvas.style.top = '0px'
+        }
+        canvas.style.transform = `scale(${this.zoomFactor})`
+      },
     },
     mounted() {
-      var ws = new WebSocket('ws://localhost:9095/pixel')
+      var ws = new WebSocket(`ws://${location.host}/adres`)
       this.ws = ws
 
       let canvas = this.$refs.canvas
@@ -161,13 +304,8 @@
 
       let ctx = canvas.getContext('2d')
       this.ctx = ctx
-      //ctx.webkitImageSmoothingEnabled = false;
-      //ctx.mozImageSmoothingEnabled = false;
-      //ctx.imageSmoothingEnabled = false;
 
       ws.onmessage = (e) => {
-
-
 
         var data = e.data
         
@@ -184,23 +322,11 @@
           }
         } else {
           data = JSON.parse(data)
-          if (data.type === 'init') {
-            //this.pixelData = data.pixelData
-            this.width = data.pixelData[0].length
-            this.height = data.pixelData.length
-
-            Vue.nextTick(() => {
-              data.pixelData.forEach((row, y) => {
-                row.forEach((color,x) => {
-                  ctx.fillStyle = color
-                  ctx.fillRect(x,y,1,1)
-                })
-              })
-            })
-            
-          } else if (data.type === 'updateDot') {
+          if (data.type === 'updateDot') {
             ctx.fillStyle = data.color
             ctx.fillRect(data.x, data.y, 1, 1)
+          } else if (data.type === 'onlineCount') {
+            this.onlineCount = data.count
           }
         }
         

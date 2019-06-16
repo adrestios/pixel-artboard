@@ -12,8 +12,8 @@ const app = express()
 const server = http.createServer(app)
 const wss = new ws.Server({server})
 
-const width = 256
-const height = 256
+const width = 512
+const height = 512
 
 main()
 
@@ -47,7 +47,24 @@ async function main() {
         ws.send(buf)
       }
     })
+    wss.clients.forEach(ws => {
+      // 在线人数，人来发一次
+      ws.send(JSON.stringify({
+          type: 'onlineCount',
+          count: wss.clients.size,
+      }))
+    })
 
+    // 人走也发一次
+    ws.on('close', () => {
+      // 向每一个在线用户发送
+      wss.clients.forEach(ws => {
+        ws.send(JSON.stringify({
+          type: 'onlineCount',
+          count: wss.clients.size,
+        }))
+      })
+    });
     let lastDraw = 0
 
     ws.on('message', msg => {
