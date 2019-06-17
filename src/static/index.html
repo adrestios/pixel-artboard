@@ -2,106 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Document</title>
-  <style>
-    @font-face {
-      font-family: 'iconfont';  /* project id 899507 */
-      src: url('//at.alicdn.com/t/font_899507_8oy7u45bbvw.eot');
-      src: url('//at.alicdn.com/t/font_899507_8oy7u45bbvw.eot?#iefix') format('embedded-opentype'),
-      url('//at.alicdn.com/t/font_899507_8oy7u45bbvw.woff') format('woff'),
-      url('//at.alicdn.com/t/font_899507_8oy7u45bbvw.ttf') format('truetype'),
-      url('//at.alicdn.com/t/font_899507_8oy7u45bbvw.svg#iconfont') format('svg');
-    }
-    .iconfont{
-      font-family:"iconfont" !important;
-      font-size:24px;font-style:normal;
-      -webkit-font-smoothing: antialiased;
-      -webkit-text-stroke-width: 0.2px;
-      -moz-osx-font-smoothing: grayscale;
-    }
-
-    #ing {
-      color: #ffffff;
-    }
-
-    .pick-btn {
-      border-radius: 15px;
-    }
-
-    .olCount {
-      float: right;
-    }
-
-    .font {
-      font-size:24px;
-      font-style:normal;
-    }
-
-    body {
-      margin: 0;
-      padding: 0;
-      background-color: #cdcdcd;
-    }
-
-    .nav {
-      text-align: center;
-      width: 100%;
-      height: 50px;
-      background-color: #333333;
-    }
-    .nav a {
-      color: #b0b0b0;
-      display: inline-block;
-      text-decoration: none;
-      line-height: 50px;
-    }
-
-    .nav a:hover {
-      color: #f3f3f3;
-    }
-
-    #app {
-      width: 512px;
-      margin: 34px auto;
-    }
-
-    .wrapper {
-      margin-bottom: 12px;
-      position: relative;
-      width: 512px;
-      height: 512px;
-      overflow: hidden;
-      border: 2px solid #333333;
-    }
-
-    canvas {
-      position: absolute;
-      vertical-align: bottom;
-      transform-origin: top left;
-    }
-
-    .common-colors {
-      margin-top: 10px;
-      background-color: #f3f3f3;
-      padding: 3px;
-    }
-
-    .color-card {
-      display: inline-block;
-      width: 21px;
-      height: 21px;
-      background-color: currentColor;
-      border: 1px solid #000;
-      border-radius: 3px;
-      margin: 5px;
-      vertical-align: bottom;
-    }
-
-    .color-card.active {
-      border: 5px solid #000;
-      margin: 1px;
-    }
-  </style>
+  <meta name="viewport" content="width=512, initial-scale=1.0">
+  <title>pixel-artboard</title>
+  <link rel="stylesheet" href="./main.css">
 </head>
 <body>
   <div id="app">
@@ -109,18 +12,28 @@
       <canvas @mousedown='prepareDrag'  @mousemove="getCoor" ref='canvas' :width='width' :height='height' style='top:0px;left:0px'></canvas>
     </div>
     <button @click="startPickingColor" class="pick-btn">
-            <unpicking v-if="pickingColor"></unpicking>
-            <picking v-if="pickingColor"></picking>
-        </button>
-        <input type="color" v-model="color" style="border-radius: 5px;">
-        <span class="font">{{`(${currSite.x},${currSite.y})`}}</span>
-        <span class="olCount"><i class="font">Online&nbsp;{{onlineCount}}</i></span>
+      <unpicking v-if="!pickingColor"></unpicking>
+      <picking v-if="pickingColor"></picking>
+    </button>
+    <input type="color" v-model="color" style="border-radius: 5px;">
+    <span class="font">{{`(${currSite.x},${currSite.y})`}}</span>
+    <span class="olCount"><i class="font">Online&nbsp;{{onlineCount}}</i></span>
     <div class='common-colors'>
       <span v-for='c of commonColors' @click='color=c' :class='{"color-card":true,active:c==color}' :style='{color:c}'></span>
     </div>
   </div>
+  <script src="//cdn.jsdelivr.net/npm/eruda"></script>
+<script>eruda.init();</script>
 </body>
+<template id="picking">
+  <i class="iconfont" id="ing">&#xea0c;</i>
+</template>
+<template id="unpicking">
+  <i class="iconfont" id="uning">&#xe702;</i>
+</template>
+
 <script src="vue-2.5.17.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.js"></script>
 <script>
   const app = new Vue({
     el: '#app',
@@ -128,7 +41,7 @@
       return {
         pixelData: [],
         commonColors: ['#000000','#ffffff','#aaaaaa','#555555','#fed3c7','#ffc4ce','#faac8e','#ff8b83','#f44336','#e91e63','#e2669e','#9c27b0','#673ab7','#3f51b5','#004670','#0571197','#2196f3','#00bcd4','#3be5db','#97fddc','#167300','#37a93c','#89e642','#d7ff07','#fff6d1','#f8cb8c','#ffeb3b','#ffc107','#ff9800','#ff5722','#b83f27','#795548'],
-        color: 'red',
+        color: '#000000',
         width: 512,
         height: 512,
         pickingColor: false,
@@ -177,6 +90,7 @@
           canvas.removeEventListener('mousemove', moveHandler)
           canvas.removeEventListener('mouseup', upHandler)
           if (!moved) {
+            console.log('handleCanvasClick')
             this.handleCanvasClick(e)
           }
         })
@@ -191,6 +105,25 @@
         let x = (clientX - rect.left) / this.zoomFactor | 0
         let y = (clientY - rect.top) / this.zoomFactor | 0
         return { x, y }
+      },
+      getMouseAbsPosition(e) {
+        let clientX = e.clientX // 相对于视口
+        let clientY = e.clientY
+        // getBoundingclientRect 也相对于视口，与clientX 作差即误差（并除以系数处理）
+        let rect = this.$refs.canvas.getBoundingClientRect()
+        // 正数浮点数与0 或运算 取整
+        let x = (clientX - rect.left) | 0
+        let y = (clientY - rect.top) | 0
+        return { x, y }
+      },
+      getFingerAbsPosition(e) {
+        let {x,y} = e.center
+        // getBoundingclientRect 也相对于视口的 CSS坐标（top，left，bottom，right），做差便是相对于该元素
+        let rect = this.$refs.canvas.getBoundingClientRect()
+        // 正数浮点数与0 或运算 取整
+        let fx = (x - rect.left) | 0
+        let fy = (y - rect.top) | 0
+        return { fx, fy }
       },
       makeCursorImg (color) {
         let cursor = document.createElement('canvas')
@@ -245,15 +178,13 @@
         console.log(this.$refs.canvas.style.cursor)
       },
       getCurrHoverColor(e) {
-        let box = this.$refs.canvas.getBoundingClientRect()
-        let x = Math.floor((e.clientX - box.left) * this.$refs.canvas.width / box.width)
-        let y = Math.floor((e.clientY - box.top) * this.$refs.canvas.height / box.height)
+        var { x, y } = this.getMousePosition(e)
         let p = this.ctx.getImageData(x, y, 1, 1).data
         let hexColor = this.rgba2hex(p)
         return hexColor
       },
       startPickingColor() {
-        this.isPickingColor = true
+        this.pickingColor = true
         this.$refs.canvas.addEventListener('mousemove', this.updateCursor)
       },
       pickColor(e) {
@@ -264,9 +195,7 @@
         this.$refs.canvas.style.cursor = ''
       }, 
       drawDot(e) {
-        let box = this.$refs.canvas.getBoundingClientRect()
-        let x = Math.floor((e.clientX - box.left) * this.$refs.canvas.width / box.width)
-        let y = Math.floor((e.clientY - box.top) * this.$refs.canvas.height / box.height)
+        let { x, y } = this.getMousePosition(e)
         this.ws.send(JSON.stringify({
           type: 'drawDot',
           x: x,
@@ -276,6 +205,10 @@
       },
       handleZoom(e) {
         canvas = this.$refs.canvas
+        let { x, y } = this.getMouseAbsPosition(e)
+        let preFactor = this.zoomFactor
+        let posX = parseInt(canvas.style.left)
+        let posY = parseInt(canvas.style.top)
         e.preventDefault()
         if (e.deltaY < 0) {
           this.zoomFactor = this.zoomFactor * 1.25
@@ -285,18 +218,119 @@
         if (this.zoomFactor < 1) {
           this.zoomFactor = 1
         }
-        if (this.zoomFactor > 10) {
+        if (this.zoomFactor > 25) {
           this.zoomFactor = 10
         }
+        let mtp = this.zoomFactor / preFactor // 变化的倍数
+        // 缩放后的指针 相对 坐标
+        let cX = mtp * x
+        let cY = mtp * y
+
+        // 缩放中心（css设置为左上角(0,0)） 应当的位移(差值)
+        let diffX = cX - x
+        let diffY = cY - y
+
+        canvas.style.top = (posY - diffY) + 'px'
+        canvas.style.left = (posX - diffX) + 'px'
         if (this.zoomFactor == 1) {
           canvas.style.left = '0px'
           canvas.style.top = '0px'
         }
         canvas.style.transform = `scale(${this.zoomFactor})`
       },
+      initScale() {
+        let canvas = this.$refs.canvas
+        let wrapper = this.$refs.wrapper
+        let myPhone = new Hammer(wrapper)
+        
+        myPhone.get('pinch').set({ enable: true })
+        myPhone.on('pinchout', (e) => {
+          e.preventDefault()
+          let preFactor = this.zoomFactor
+          let {fx,fy} = this.getFingerAbsPosition(e)
+          let posX = parseInt(canvas.style.left)
+          let posY = parseInt(canvas.style.top)
+          this.zoomFactor = this.zoomFactor * e.scale
+          if (this.zoomFactor > 35) {
+              this.zoomFactor *= (1 / e.scale)
+          }
+          let mtp = this.zoomFactor / preFactor
+          
+          let cX = mtp * fx
+          let cY = mtp * fy
+
+          let diffX = cX - fx
+          let diffY = cY - fy
+          
+          canvas.style.top = (posY - diffY) + 'px'
+          canvas.style.left = (posX - diffX) + 'px'
+          canvas.style.transform = `scale(${this.zoomFactor})`
+        }),
+        myPhone.on('pinchin', (e) => {
+          e.preventDefault()
+          let preFactor = this.zoomFactor
+          let {fx,fy} = this.getFingerAbsPosition(e)
+          let posX = parseInt(canvas.style.left)
+          let posY = parseInt(canvas.style.top)
+          
+          this.zoomFactor = this.zoomFactor * e.scale
+          if (this.zoomFactor < 1) {
+              this.zoomFactor = 1
+              canvas.style.top = '0px'
+              canvas.style.left = '0px'
+          } 
+          let mtp = this.zoomFactor / preFactor 
+          
+          let cX = mtp * fx
+          let cY = mtp * fy
+
+          let diffX = cX - fx
+          let diffY = cY - fy
+          
+          
+          canvas.style.top = (posY - diffY) + 'px'
+          canvas.style.left = (posX - diffX) + 'px'
+          if (this.zoomFactor == 1) {
+              
+              canvas.style.left = '0px'
+              canvas.style.top = '0px'
+          }
+          canvas.style.transform = `scale(${this.zoomFactor})`
+        })
+      },
+      initPhoneDrag() {
+        console.log(111)
+        var prevent = document.querySelector('.wrapper')
+        prevent.addEventListener('touchmove', (e) => {
+            e.preventDefault()
+        })
+        let canvas = this.$refs.canvas
+        let wrapper = this.$refs.wrapper
+        
+        let myPhone = new Hammer(wrapper)
+        
+        myPhone.on('panstart', (e) => {
+          let startX = e.center.x
+          let startY = e.center.y
+          
+          console.log(333)
+          let posX = parseInt(canvas.style.left)
+          let posY = parseInt(canvas.style.top)
+          myPhone.on('panmove', (e) => {
+            let currX = e.center.x
+            let currY = e.center.y
+            let diffX = currX - startX
+            let diffY = currY - startY
+            canvas.style.left = posX + diffX + 'px'
+            canvas.style.top = posY + diffY + 'px'
+          })
+        })
+      }
     },
     mounted() {
-      var ws = new WebSocket(`ws://${location.host}/adres`)
+      this.initScale()
+      this.initPhoneDrag()
+      let ws = new WebSocket(`ws://${location.host}/adres`)
       this.ws = ws
 
       let canvas = this.$refs.canvas
@@ -310,13 +344,10 @@
         var data = e.data
         
         if (Object.prototype.toString.call(data) === '[object Blob]') {
-          console.log('blob');
           let tmpUrl = URL.createObjectURL(data)
-          console.log(tmpUrl)
           let image = new Image()
           image.src = tmpUrl
           
-          document.body.appendChild(image)
           image.onload=() => {
             ctx.drawImage(image,0,0)
           }
@@ -329,9 +360,15 @@
             this.onlineCount = data.count
           }
         }
-        
       }
-
+    },
+    components: {
+      'picking': {
+        template: '#picking',
+      },
+      'unpicking': {
+        template: '#unpicking',
+      }
     }
   })
 </script>
