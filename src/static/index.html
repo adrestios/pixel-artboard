@@ -51,6 +51,7 @@
       }
     },
     methods: {
+      //获取当前坐标值
       getCoor(e) {
         let { x, y } = this.getMousePosition(e)
         this.currSite.x = x
@@ -61,6 +62,7 @@
             this.currSite.y = '?'
         })
         },
+      //电脑端拖拽
       prepareDrag(e) {
         let canvas = this.$refs.canvas
         let startX = e.clientX
@@ -70,7 +72,9 @@
         let moveHandler
         let upHandler
 
+        //判断是否是拖拽移动
         let moved = false
+        // curr为拖拽后鼠标位置，diff为鼠标移动的距离，将移动二代距离给left，和top即为移动后canvas的位置
         canvas.addEventListener('mousemove', moveHandler = e => {
           let currX = e.clientX
           let currY = e.clientY
@@ -79,6 +83,7 @@
           canvas.style.left = posX + diffX + 'px'
           canvas.style.top = posY + diffY + 'px'
         })
+        //如果移动的距离在X,Y方向上大于2就是移动。moved为True，不点击画点或取色
         canvas.addEventListener('mouseup',upHandler = e => {
           let currX = e.clientX
           let currY = e.clientY
@@ -89,29 +94,29 @@
           }
           canvas.removeEventListener('mousemove', moveHandler)
           canvas.removeEventListener('mouseup', upHandler)
+          //不移动就画点或取色
           if (!moved) {
-            console.log('handleCanvasClick')
             this.handleCanvasClick(e)
           }
         })
       },
       getMousePosition(e) {
-        // 坐标有误差，在发送时作出修正
-        let clientX = e.clientX // 相对于视口
+        
+        let clientX = e.clientX // 相对于视口左上角的位置
         let clientY = e.clientY
         // getBoundingclientRect 也相对于视口，与clientX 作差即误差（并除以系数处理）
         let rect = this.$refs.canvas.getBoundingClientRect()
-        // 正数浮点数与0 或运算 取整
+        // 正数浮点数与0 或运算 向下取整
         let x = (clientX - rect.left) / this.zoomFactor | 0
         let y = (clientY - rect.top) / this.zoomFactor | 0
         return { x, y }
       },
       getMouseAbsPosition(e) {
-        let clientX = e.clientX // 相对于视口
+        let clientX = e.clientX // 相对于视口左上角的位置
         let clientY = e.clientY
         // getBoundingclientRect 也相对于视口，与clientX 作差即误差（并除以系数处理）
         let rect = this.$refs.canvas.getBoundingClientRect()
-        // 正数浮点数与0 或运算 取整
+        // 正数浮点数与0 或运算 向下取整
         let x = (clientX - rect.left) | 0
         let y = (clientY - rect.top) | 0
         return { x, y }
@@ -125,6 +130,7 @@
         let fy = (y - rect.top) | 0
         return { fx, fy }
       },
+      //获取取色器图像，将获取的颜色画在canvas上，再把canvas转为img给cursor
       makeCursorImg (color) {
         let cursor = document.createElement('canvas')
         let ctx = cursor.getContext('2d')
@@ -156,6 +162,7 @@
         return cursor.toDataURL()
       },
 
+      //判断是否取色，取色执行pickcolor,否则drawdot
       handleCanvasClick(e) {
         
         if (this.pickingColor) {
@@ -164,29 +171,32 @@
           this.drawDot(e)
         }
       },
+      //rgba转16进制夜色
       rgba2hex(dot) {
         dot = Array.from(dot)
         var dot = dot.map(it => it.toString(16).padStart(2, '0'))
         return '#'+dot[0]+dot[1]+dot[2]
       },
+      //更新cursor图标
       updateCursor: function (e) {
         let color = this.getCurrHoverColor(e)
         let cursorUrl = this.makeCursorImg(color)
-        // refs Vue自带的准确元素集
-        console.log(e)
+        
         this.$refs.canvas.style.cursor = `url(${cursorUrl}) 6 6, crosshair`
-        console.log(this.$refs.canvas.style.cursor)
       },
+      //获取颜色并转换颜色
       getCurrHoverColor(e) {
         var { x, y } = this.getMousePosition(e)
         let p = this.ctx.getImageData(x, y, 1, 1).data
         let hexColor = this.rgba2hex(p)
         return hexColor
       },
+      //开始取色
       startPickingColor() {
         this.pickingColor = true
         this.$refs.canvas.addEventListener('mousemove', this.updateCursor)
       },
+      //取色
       pickColor(e) {
         let hexColor = this.getCurrHoverColor(e)
         this.pickingColor = false
@@ -194,6 +204,7 @@
         this.$refs.canvas.removeEventListener('mousemove', this.updateCursor)
         this.$refs.canvas.style.cursor = ''
       }, 
+      //画点
       drawDot(e) {
         let { x, y } = this.getMousePosition(e)
         this.ws.send(JSON.stringify({
@@ -203,6 +214,7 @@
           color: this.color,
         }))
       },
+      //电脑端缩放
       handleZoom(e) {
         canvas = this.$refs.canvas
         let { x, y } = this.getMouseAbsPosition(e)
@@ -218,8 +230,8 @@
         if (this.zoomFactor < 1) {
           this.zoomFactor = 1
         }
-        if (this.zoomFactor > 25) {
-          this.zoomFactor = 10
+        if (this.zoomFactor > 30) {
+          this.zoomFactor = this.zoomFactor * 0.8
         }
         let mtp = this.zoomFactor / preFactor // 变化的倍数
         // 缩放后的指针 相对 坐标
@@ -238,11 +250,13 @@
         }
         canvas.style.transform = `scale(${this.zoomFactor})`
       },
+      //移动端缩放，初始就绑定
       initScale() {
         let canvas = this.$refs.canvas
         let wrapper = this.$refs.wrapper
         let myPhone = new Hammer(wrapper)
         
+        //设置双指缩放
         myPhone.get('pinch').set({ enable: true })
         myPhone.on('pinchout', (e) => {
           e.preventDefault()
@@ -251,8 +265,8 @@
           let posX = parseInt(canvas.style.left)
           let posY = parseInt(canvas.style.top)
           this.zoomFactor = this.zoomFactor * e.scale
-          if (this.zoomFactor > 35) {
-              this.zoomFactor *= (1 / e.scale)
+          if (this.zoomFactor > 30) {
+              this.zoomFactor = (1 / e.scale)
           }
           let mtp = this.zoomFactor / preFactor
           
@@ -298,8 +312,9 @@
           canvas.style.transform = `scale(${this.zoomFactor})`
         })
       },
+      //移动端拖拽
       initPhoneDrag() {
-        console.log(111)
+        
         var prevent = document.querySelector('.wrapper')
         prevent.addEventListener('touchmove', (e) => {
             e.preventDefault()
@@ -313,7 +328,6 @@
           let startX = e.center.x
           let startY = e.center.y
           
-          console.log(333)
           let posX = parseInt(canvas.style.left)
           let posY = parseInt(canvas.style.top)
           myPhone.on('panmove', (e) => {
