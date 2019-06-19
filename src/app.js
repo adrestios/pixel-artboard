@@ -22,6 +22,7 @@ async function main() {
   try {
     img = await Jimp.read(path.join(__dirname, './pixel.png'))
   } catch(e) {
+    console.log(e);
     img = new Jimp(width,height,0xffffffff)
   }
 
@@ -68,12 +69,12 @@ async function main() {
       let now = Date.now()
 
       if (msg.type === 'drawDot') {
-        if (now - lastDraw < 10) {
+        if (now - lastDraw < 100) {
           return
         }
         if (msg.x >= 0 && msg.x < width && msg.y >= 0 && msg.y < height) {
-
-          lastDraw = now
+          lastDraw = now 
+          lastUpdate = now 
           img.setPixelColor(Jimp.cssColorToHex(msg.color), msg.x, msg.y)
           wss.clients.forEach(client => {
             client.send(JSON.stringify({
