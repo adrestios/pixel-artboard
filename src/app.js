@@ -20,11 +20,8 @@ main()
 async function main() {
   let pixelData
   try {
-    console.log(11)
     img = await Jimp.read(path.join(__dirname, './pixel.png'))
   } catch(e) {
-    console.log(e)
-    console.log(22)
     img = new Jimp(width,height,0xffffffff)
   }
 
@@ -43,7 +40,6 @@ async function main() {
       if (err) {
         console.log(err)
       } else {
-        console.log(buf)
         ws.send(buf)
       }
     })
