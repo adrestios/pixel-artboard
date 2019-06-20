@@ -9,7 +9,7 @@
 * PC端
   ![pc](https://github.com/adrestios/pixel-artboard/blob/master/README_IMG/PC%E7%AB%AF.png)
 * 移动端
-  ![移动](https://github.com/adrestios/pixel-artboard/blob/master/README_IMG/%E7%A7%BB%E5%8A%A8%E7%AB%AF.pngs)
+  ![移动](https://github.com/adrestios/pixel-artboard/blob/master/README_IMG/%E7%A7%BB%E5%8A%A8%E7%AB%AF.png)
 
 ## 启动
 1. 安装依赖
