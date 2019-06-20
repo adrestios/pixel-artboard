@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=512, initial-scale=1.0">
+  <meta name="viewport" content="width=514, initial-scale=1.0">
   <title>pixel-artboard</title>
   <link rel="stylesheet" href="./main.css">
 </head>
@@ -22,7 +22,6 @@
       <span v-for='c of commonColors' @click='color=c' :class='{"color-card":true,active:c==color}' :style='{color:c}'></span>
     </div>
   </div>
-  <script src="//cdn.jsdelivr.net/npm/eruda"></script>
 <script>eruda.init();</script>
 </body>
 <template id="picking">
@@ -265,9 +264,12 @@
           let posX = parseInt(canvas.style.left)
           let posY = parseInt(canvas.style.top)
           this.zoomFactor = this.zoomFactor * e.scale
+          console.log(preFactor,1);
+          console.log(this.zoomFactor,2);
           if (this.zoomFactor > 30) {
               this.zoomFactor = this.zoomFactor*(1 / e.scale)
           }
+          console.log(this.zoomFactor,3);
           let mtp = this.zoomFactor / preFactor
           
           let cX = mtp * fx
@@ -342,6 +344,7 @@
       }
     },
     mounted() {
+      console.log(222);
       this.initScale()
       this.initPhoneDrag()
       let ws = new WebSocket(`ws://${location.host}/adres`)
